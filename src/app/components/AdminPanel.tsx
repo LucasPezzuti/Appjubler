@@ -28,7 +28,8 @@ import {
   Ticket,
   FolderKanban,
   Search,
-  LayoutDashboard
+  LayoutDashboard,
+  Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,6 +41,8 @@ export const AdminPanel: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messageText, setMessageText] = useState('');
   const [chatStatusFilter, setChatStatusFilter] = useState<'ALL' | 'ACTIVE' | 'PENDING_OUTSIDE_HOURS' | 'CLOSED'>('ALL');
+  const [chatCompanyFilter, setChatCompanyFilter] = useState<string>('all');
+  const [chatUserFilter, setChatUserFilter] = useState<string>('all');
   const [companyFilter, setCompanyFilter] = useState<string>('all');
   const [selectedCompanyForDetails, setSelectedCompanyForDetails] = useState<string | null>(null);
   const [detailsView, setDetailsView] = useState<'tickets' | 'projects' | null>(null);
@@ -47,6 +50,9 @@ export const AdminPanel: React.FC = () => {
   const [ticketSearchQuery, setTicketSearchQuery] = useState('');
   const [ticketUserFilter, setTicketUserFilter] = useState<string>('all');
   const [projectSearchQuery, setProjectSearchQuery] = useState('');
+  const [isNewChatDialogOpen, setIsNewChatDialogOpen] = useState(false);
+  const [newChatUserId, setNewChatUserId] = useState<string>('');
+  const [newChatSubject, setNewChatSubject] = useState('');
 
   if (!currentUser || currentUser.role !== 'SUPERADMIN') {
     return null;
@@ -121,6 +127,42 @@ export const AdminPanel: React.FC = () => {
     setChats(chats.map(c => c.id === chatId ? updatedChat : c));
     setSelectedChat(updatedChat);
     toast.success('Chat activado y en atención');
+  };
+
+  const handleCreateNewChat = () => {
+    if (!newChatUserId || !newChatSubject.trim()) {
+      toast.error('Selecciona un usuario y completa el asunto');
+      return;
+    }
+
+    const targetUser = users.find(u => u.id === newChatUserId);
+    if (!targetUser) return;
+
+    const targetCompany = mockCompanies.find(c => c.id === targetUser.companyId);
+    if (!targetCompany) return;
+
+    const newChat: Chat = {
+      id: `chat-${Date.now()}`,
+      companyId: targetUser.companyId,
+      companyName: targetCompany.name,
+      userId: targetUser.id,
+      userName: targetUser.name,
+      userEmail: targetUser.email,
+      subject: newChatSubject,
+      lastMessage: 'Nueva conversación iniciada',
+      lastMessageTime: new Date().toISOString(),
+      unreadCount: 0,
+      status: 'ACTIVE',
+      messages: [],
+      createdAt: new Date().toISOString()
+    };
+
+    setChats([newChat, ...chats]);
+    setSelectedChat(newChat);
+    setIsNewChatDialogOpen(false);
+    setNewChatUserId('');
+    setNewChatSubject('');
+    toast.success(`Conversación iniciada con ${targetUser.name}`);
   };
 
   const formatTime = (timestamp: string) => {
@@ -253,6 +295,10 @@ export const AdminPanel: React.FC = () => {
           const filteredChats = chats.filter(c => {
             // Filter by status
             if (chatStatusFilter !== 'ALL' && c.status !== chatStatusFilter) return false;
+            // Filter by company
+            if (chatCompanyFilter !== 'all' && c.companyId !== chatCompanyFilter) return false;
+            // Filter by user
+            if (chatUserFilter !== 'all' && c.userId !== chatUserFilter) return false;
             return true;
           });
 
@@ -268,7 +314,7 @@ export const AdminPanel: React.FC = () => {
                   
                   {/* Status Filter */}
                   <Select value={chatStatusFilter} onValueChange={(v) => setChatStatusFilter(v as any)}>
-                    <SelectTrigger className="bg-background border-border text-foreground h-9">
+                    <SelectTrigger className="bg-background border-border text-foreground h-9 mb-2">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-card border-border">
@@ -284,6 +330,36 @@ export const AdminPanel: React.FC = () => {
                       <SelectItem value="CLOSED" className="text-foreground">
                         Cerradas ({chats.filter(c => c.status === 'CLOSED').length})
                       </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* Company Filter */}
+                  <Select value={chatCompanyFilter} onValueChange={setChatCompanyFilter}>
+                    <SelectTrigger className="bg-background border-border text-foreground h-9 mb-2">
+                      <SelectValue placeholder="Filtrar por empresa" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="all" className="text-foreground">Todas las empresas</SelectItem>
+                      {mockCompanies.map(company => (
+                        <SelectItem key={company.id} value={company.id} className="text-foreground">
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  {/* User Filter */}
+                  <Select value={chatUserFilter} onValueChange={setChatUserFilter}>
+                    <SelectTrigger className="bg-background border-border text-foreground h-9">
+                      <SelectValue placeholder="Filtrar por usuario" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card border-border">
+                      <SelectItem value="all" className="text-foreground">Todos los usuarios</SelectItem>
+                      {mockUsers.map(user => (
+                        <SelectItem key={user.id} value={user.id} className="text-foreground">
+                          {user.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -443,6 +519,18 @@ export const AdminPanel: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
+                    <Button 
+                      className="w-full bg-primary hover:bg-primary/90" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setNewChatUserId(selectedChat.userId);
+                        setIsNewChatDialogOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nueva Conversación
+                    </Button>
                     <Button className="w-full bg-primary hover:bg-primary/90" variant="outline" size="sm">
                       Ver Tickets
                     </Button>
@@ -897,6 +985,51 @@ export const AdminPanel: React.FC = () => {
                 ))}
             </div>
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+      
+      {/* New Chat Dialog */}
+      <Dialog open={isNewChatDialogOpen} onOpenChange={setIsNewChatDialogOpen}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Iniciar Nueva Conversación</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Seleccionar Usuario</label>
+              <Select value={newChatUserId} onValueChange={setNewChatUserId}>
+                <SelectTrigger className="bg-background border-border text-foreground">
+                  <SelectValue placeholder="Selecciona un usuario" />
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border">
+                  {users.filter(u => u.role !== 'SUPERADMIN').map(user => {
+                    const company = mockCompanies.find(c => c.id === user.companyId);
+                    return (
+                      <SelectItem key={user.id} value={user.id} className="text-foreground">
+                        {user.name} - {company?.name}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Asunto</label>
+              <Input
+                placeholder="Ingresa el asunto de la conversación"
+                value={newChatSubject}
+                onChange={(e) => setNewChatSubject(e.target.value)}
+                className="bg-background border-border text-foreground"
+              />
+            </div>
+            <Button 
+              onClick={handleCreateNewChat} 
+              className="w-full bg-primary hover:bg-primary/90"
+              disabled={!newChatUserId || !newChatSubject.trim()}
+            >
+              Iniciar Conversación
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

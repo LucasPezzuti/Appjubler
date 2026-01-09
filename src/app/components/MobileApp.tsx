@@ -10,7 +10,8 @@ import {
   Users, 
   LogOut,
   Home,
-  UserCircle
+  UserCircle,
+  Bell
 } from 'lucide-react';
 import { HomeView } from './mobile/HomeView';
 import { TicketsView } from './mobile/TicketsView';
@@ -33,6 +34,7 @@ import { Badge } from './ui/badge';
 export const MobileApp: React.FC = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
+  const [unreadNotifications, setUnreadNotifications] = useState(3); // Mock notification count
 
   if (!user) return null;
 
@@ -77,6 +79,18 @@ export const MobileApp: React.FC = () => {
               onClick={() => setActiveTab('home')}
             >
               <Home className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-foreground hover:bg-secondary relative"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadNotifications > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-white text-xs">
+                  {unreadNotifications}
+                </Badge>
+              )}
             </Button>
             <Button
               variant="ghost"
