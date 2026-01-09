@@ -11,7 +11,8 @@ import {
   LogOut,
   Home,
   UserCircle,
-  Bell
+  Bell,
+  ArrowLeft
 } from 'lucide-react';
 import { HomeView } from './mobile/HomeView';
 import { TicketsView } from './mobile/TicketsView';
@@ -20,6 +21,7 @@ import { ProjectsView } from './mobile/ProjectsView';
 import { AccountView } from './mobile/AccountView';
 import { UsersView } from './mobile/UsersView';
 import { ProfileView } from './mobile/ProfileView';
+import { NotificationsView } from './mobile/NotificationsView';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,13 +32,59 @@ import {
 } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { Badge } from './ui/badge';
+import { mockNotifications } from '../mock-data';
+import { Notification } from '../types';
+import { toast } from 'sonner';
 
 export const MobileApp: React.FC = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
-  const [unreadNotifications, setUnreadNotifications] = useState(3); // Mock notification count
+  const [notifications, setNotifications] = useState<Notification[]>(
+    mockNotifications.filter(n => n.userId === '1') // Filtrar por usuario actual
+  );
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   if (!user) return null;
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleNotificationClick = (notification: Notification) => {
+    // Marcar como leída
+    setNotifications(prev =>
+      prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+    );
+
+    // Cerrar panel de notificaciones
+    setShowNotifications(false);
+
+    // Navegar según el tipo
+    switch (notification.type) {
+      case 'NEW_MESSAGE':
+        if (notification.chatId) {
+          setSelectedChatId(notification.chatId);
+        }
+        setActiveTab('chat');
+        toast.success('Abriendo chat');
+        break;
+      case 'TICKET_UPDATE':
+        setActiveTab('tickets');
+        toast.success('Mostrando tickets');
+        break;
+      case 'PROJECT_UPDATE':
+        if (user.canViewProjects !== false) {
+          setActiveTab('projects');
+          toast.success('Mostrando proyectos');
+        }
+        break;
+      case 'USER_APPROVED':
+        if (user.canViewUsers !== false) {
+          setActiveTab('users');
+          toast.success('Mostrando usuarios');
+        }
+        break;
+    }
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -63,48 +111,66 @@ export const MobileApp: React.FC = () => {
       {/* Header */}
       <div className="bg-card border-b border-border shadow-md relative z-10">
         <div className="px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img 
-              src="https://jubbler.tech/assets/img/jubblerFirma.png" 
-              alt="Jubbler"
-              className="h-8 object-contain"
-            />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="text-foreground hover:bg-secondary"
-              onClick={() => setActiveTab('home')}
-            >
-              <Home className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-foreground hover:bg-secondary relative"
-            >
-              <Bell className="h-5 w-5" />
-              {unreadNotifications > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-white text-xs">
-                  {unreadNotifications}
-                </Badge>
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-foreground hover:bg-secondary"
-              onClick={() => setActiveTab('profile')}
-            >
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary/20 text-primary text-xs">
-                  {getInitials(user.name)}
-                </AvatarFallback>
-              </Avatar>
-            </Button>
-          </div>
+          {activeTab === 'notifications' ? (
+            <>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-foreground hover:bg-secondary"
+                onClick={() => setActiveTab('home')}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-lg font-semibold text-foreground">Notificaciones</h1>
+              <div className="w-10" /> {/* Spacer for alignment */}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <img 
+                  src="https://jubbler.tech/assets/img/jubblerFirma.png" 
+                  alt="Jubbler"
+                  className="h-8 object-contain"
+                />
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-foreground hover:bg-secondary"
+                  onClick={() => setActiveTab('home')}
+                >
+                  <Home className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-foreground hover:bg-secondary relative"
+                  onClick={() => setActiveTab('notifications')}
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-destructive text-white text-xs">
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-foreground hover:bg-secondary"
+                  onClick={() => setActiveTab('profile')}
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                      {getInitials(user.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -122,7 +188,7 @@ export const MobileApp: React.FC = () => {
               <TicketsView />
             </TabsContent>
             <TabsContent value="chat" className="m-0 h-full">
-              <ChatView />
+              <ChatView selectedChatId={selectedChatId} />
             </TabsContent>
             {user.canViewProjects !== false && (
               <TabsContent value="projects" className="m-0 h-full">
@@ -139,10 +205,13 @@ export const MobileApp: React.FC = () => {
                 <UsersView />
               </TabsContent>
             )}
+            <TabsContent value="notifications" className="m-0 h-full">
+              <NotificationsView notifications={notifications} onNotificationClick={handleNotificationClick} />
+            </TabsContent>
           </div>
 
-          {/* Bottom Navigation - Solo mostrar si NO estamos en home o profile */}
-          {activeTab !== 'home' && activeTab !== 'profile' && (
+          {/* Bottom Navigation - Solo mostrar si NO estamos en home, profile o notifications */}
+          {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'notifications' && (
             <TabsList className="w-full h-16 rounded-none border-t border-border bg-card/90 backdrop-blur-sm flex items-center justify-around p-0">
               <TabsTrigger 
                 value="tickets" 

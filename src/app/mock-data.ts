@@ -6,7 +6,8 @@ import {
   Project, 
   Invoice, 
   AccountMovement,
-  ChatMessage 
+  ChatMessage,
+  Notification
 } from './types';
 
 // Companies
@@ -638,5 +639,68 @@ export const mockAccountMovements: AccountMovement[] = [
     credit: 0,
     balance: 175000,
     invoiceId: 'inv-2'
+  }
+];
+
+// Notifications
+export const mockNotifications: Notification[] = [
+  {
+    id: 'notif-1',
+    userId: '1',
+    type: 'NEW_MESSAGE',
+    title: 'Nuevo mensaje',
+    description: 'Tienes un nuevo mensaje de Admin Jubbler',
+    timestamp: '2025-01-06T09:32:00Z',
+    read: false,
+    chatId: 'chat-1'
+  },
+  {
+    id: 'notif-2',
+    userId: '1',
+    type: 'TICKET_UPDATE',
+    title: 'Actualización de ticket',
+    description: 'El ticket #T-002 cambió de estado a EN PROGRESO',
+    timestamp: '2025-01-02T09:05:00Z',
+    read: false,
+    ticketId: 'T-002'
+  },
+  {
+    id: 'notif-3',
+    userId: '1',
+    type: 'PROJECT_UPDATE',
+    title: 'Actualización de proyecto',
+    description: 'El proyecto Sistema de Gestión ERP fue actualizado',
+    timestamp: '2025-01-05T14:20:00Z',
+    read: false,
+    projectId: 'proj-1'
+  },
+  {
+    id: 'notif-4',
+    userId: '2',
+    type: 'USER_APPROVED',
+    title: 'Usuario aprobado',
+    description: 'Tu usuario fue aprobado por la administración',
+    timestamp: '2025-01-04T11:00:00Z',
+    read: true
+  },
+  {
+    id: 'notif-5',
+    userId: '1',
+    type: 'NEW_MESSAGE',
+    title: 'Nuevo mensaje',
+    description: 'Tienes un nuevo mensaje de Admin Jubbler',
+    timestamp: '2024-12-28T16:05:00Z',
+    read: true,
+    chatId: 'chat-5'
+  },
+  {
+    id: 'notif-6',
+    userId: '1',
+    type: 'TICKET_UPDATE',
+    title: 'Ticket resuelto',
+    description: 'El ticket #T-003 cambió de estado a RESUELTO',
+    timestamp: '2024-12-29T16:50:00Z',
+    read: true,
+    ticketId: 'T-003'
   }
 ];

@@ -115,3 +115,20 @@ export interface AccountMovement {
   balance: number;
   invoiceId?: string;
 }
+
+// Notification Types
+export type NotificationType = 'NEW_MESSAGE' | 'TICKET_UPDATE' | 'PROJECT_UPDATE' | 'USER_APPROVED';
+
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  description: string;
+  timestamp: string;
+  read: boolean;
+  userId: string;
+  // Metadata para navegación
+  chatId?: string;
+  ticketId?: string;
+  projectId?: string;
+}

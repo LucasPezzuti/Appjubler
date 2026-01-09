@@ -20,7 +20,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export const ChatView: React.FC = () => {
+interface ChatViewProps {
+  selectedChatId?: string | null;
+}
+
+export const ChatView: React.FC<ChatViewProps> = ({ selectedChatId }) => {
   const { user } = useAuth();
   const [chats, setChats] = useState<Chat[]>(
     mockChats.filter(c => c.companyId === user?.companyId)
@@ -28,6 +32,16 @@ export const ChatView: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-seleccionar chat cuando viene de notificación
+  useEffect(() => {
+    if (selectedChatId) {
+      const chat = chats.find(c => c.id === selectedChatId);
+      if (chat) {
+        setSelectedChat(chat);
+      }
+    }
+  }, [selectedChatId, chats]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
