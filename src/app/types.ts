@@ -29,6 +29,27 @@ export interface Company {
 export type TicketType = 'INCIDENT' | 'REQUIREMENT';
 export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
 export type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+export type TicketUrgency = 'LOW' | 'MEDIUM' | 'HIGH';
+export type TicketImpact = 'LOW' | 'MEDIUM' | 'HIGH';
+export type TicketOrigin = 'WEB' | 'EMAIL' | 'PHONE' | 'MOBILE';
+export type CommentType = 'NORMAL' | 'MASDACLI' | 'RTAMASDACL' | 'COMUNICLI' | 'APROBACLI';
+
+export interface TicketComment {
+  id: string;
+  ticketId: string;
+  userId: string;
+  userName: string;
+  userRole: 'CLIENT' | 'SUPERADMIN';
+  content: string;
+  timestamp: string;
+  read: boolean;
+  commentType?: CommentType; // Tipo de comentario
+  requiresResponse?: boolean; // Si es MASDACLI y aún no ha sido respondido
+  requiresApproval?: boolean; // Si es COMUNICLI y aún no ha sido aprobado/rechazado
+  respondedToCommentId?: string; // Si es RTAMASDACL, ID del comentario MASDACLI al que responde
+  approvedCommentId?: string; // Si es APROBACLI, ID del comentario COMUNICLI al que aprueba/rechaza
+  approved?: boolean; // Si es APROBACLI, si fue aprobado (true) o rechazado (false)
+}
 
 export interface Ticket {
   id: string;
@@ -37,11 +58,18 @@ export interface Ticket {
   description: string;
   status: TicketStatus;
   priority: TicketPriority;
+  urgency: TicketUrgency;
+  impact: TicketImpact;
+  origin: TicketOrigin;
   companyId: string;
+  companyName?: string;
   createdBy: string;
   createdByName: string;
   createdAt: string;
   updatedAt: string;
+  comments: TicketComment[];
+  hasUnreadComments?: boolean;
+  hasActionRequired?: boolean; // Si hay un MASDACLI sin responder
 }
 
 // Chat Types
@@ -77,6 +105,7 @@ export interface Chat {
   createdAt: string;
   closedAt?: string;
   subject?: string;
+  assignedTo?: string; // ID del admin asignado
 }
 
 // Project Types
@@ -131,4 +160,11 @@ export interface Notification {
   chatId?: string;
   ticketId?: string;
   projectId?: string;
+}
+
+// Admin/Agent Types
+export interface Admin {
+  id: string;
+  name: string;
+  email: string;
 }

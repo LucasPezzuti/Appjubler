@@ -7,8 +7,20 @@ import {
   Invoice, 
   AccountMovement,
   ChatMessage,
-  Notification
+  Notification,
+  TicketComment,
+  Admin
 } from './types';
+
+// Admins/Agents
+export const mockAdmins: Admin[] = [
+  { id: 'admin-sofia', name: 'Sofía', email: 'sofia@jubbler.com' },
+  { id: 'admin-mora', name: 'Mora', email: 'mora@jubbler.com' },
+  { id: 'admin-hernan', name: 'Hernán', email: 'hernan@jubbler.com' },
+  { id: 'admin-marian', name: 'Marian', email: 'marian@jubbler.com' },
+  { id: 'admin-octa', name: 'Octa', email: 'octa@jubbler.com' },
+  { id: 'admin-javi', name: 'Javi', email: 'javi@jubbler.com' },
+];
 
 // Companies
 export const mockCompanies: Company[] = [
@@ -92,15 +104,21 @@ export const mockTickets: Ticket[] = [
   {
     id: 'T-001',
     type: 'INCIDENT',
-    title: 'Error en módulo de facturación',
-    description: 'Al generar una factura, el sistema muestra un error 500',
+    title: 'Error al descargar factura del mes anterior',
+    description: 'No puedo descargar la factura de noviembre. El sistema muestra un error 404.',
     status: 'OPEN',
     priority: 'HIGH',
+    urgency: 'HIGH',
+    impact: 'MEDIUM',
+    origin: 'WEB',
     companyId: '1',
+    companyName: 'TechCorp S.A.',
     createdBy: '1',
     createdByName: 'Juan Pérez',
-    createdAt: '2025-01-05T10:30:00Z',
-    updatedAt: '2025-01-05T10:30:00Z'
+    createdAt: '2025-01-12T10:30:00Z',
+    updatedAt: '2025-01-12T10:30:00Z',
+    comments: [],
+    hasUnreadComments: true
   },
   {
     id: 'T-002',
@@ -109,11 +127,17 @@ export const mockTickets: Ticket[] = [
     description: 'Solicitud para agregar la funcionalidad de exportar reportes a formato Excel',
     status: 'IN_PROGRESS',
     priority: 'MEDIUM',
+    urgency: 'MEDIUM',
+    impact: 'LOW',
+    origin: 'EMAIL',
     companyId: '1',
+    companyName: 'TechCorp S.A.',
     createdBy: '1',
     createdByName: 'Juan Pérez',
     createdAt: '2024-12-20T14:00:00Z',
-    updatedAt: '2025-01-02T09:00:00Z'
+    updatedAt: '2025-01-02T09:00:00Z',
+    comments: [],
+    hasUnreadComments: false
   },
   {
     id: 'T-003',
@@ -122,11 +146,17 @@ export const mockTickets: Ticket[] = [
     description: 'Los usuarios que utilizan Safari no pueden iniciar sesión',
     status: 'RESOLVED',
     priority: 'URGENT',
+    urgency: 'HIGH',
+    impact: 'HIGH',
+    origin: 'PHONE',
     companyId: '2',
+    companyName: 'Innovate Ltd.',
     createdBy: '3',
     createdByName: 'Carlos López',
     createdAt: '2024-12-28T11:15:00Z',
-    updatedAt: '2024-12-29T16:45:00Z'
+    updatedAt: '2024-12-29T16:45:00Z',
+    comments: [],
+    hasUnreadComments: false
   },
   {
     id: 'T-004',
@@ -135,11 +165,17 @@ export const mockTickets: Ticket[] = [
     description: 'Crear un dashboard personalizado con métricas específicas del negocio',
     status: 'OPEN',
     priority: 'LOW',
+    urgency: 'LOW',
+    impact: 'LOW',
+    origin: 'MOBILE',
     companyId: '2',
+    companyName: 'Innovate Ltd.',
     createdBy: '4',
     createdByName: 'Ana Martínez',
     createdAt: '2025-01-04T09:30:00Z',
-    updatedAt: '2025-01-04T09:30:00Z'
+    updatedAt: '2025-01-04T09:30:00Z',
+    comments: [],
+    hasUnreadComments: false
   },
   {
     id: 'T-005',
@@ -148,11 +184,165 @@ export const mockTickets: Ticket[] = [
     description: 'El sistema tarda más de 30 segundos en cargar el listado de clientes',
     status: 'IN_PROGRESS',
     priority: 'MEDIUM',
+    urgency: 'MEDIUM',
+    impact: 'MEDIUM',
+    origin: 'WEB',
     companyId: '3',
+    companyName: 'Digital Solutions',
     createdBy: '5',
     createdByName: 'Pedro Sánchez',
     createdAt: '2025-01-03T13:20:00Z',
-    updatedAt: '2025-01-04T10:00:00Z'
+    updatedAt: '2025-01-04T10:00:00Z',
+    comments: [],
+    hasUnreadComments: false
+  },
+  {
+    id: 'T-006',
+    type: 'INCIDENT',
+    title: 'Error al generar reportes mensuales',
+    description: 'No se pueden generar los reportes mensuales de ventas. El sistema muestra error de cálculo.',
+    status: 'IN_PROGRESS',
+    priority: 'HIGH',
+    urgency: 'HIGH',
+    impact: 'HIGH',
+    origin: 'WEB',
+    companyId: '1',
+    companyName: 'TechCorp S.A.',
+    createdBy: '1',
+    createdByName: 'Juan Pérez',
+    createdAt: '2025-01-10T09:00:00Z',
+    updatedAt: '2025-01-15T16:30:00Z',
+    comments: [],
+    hasUnreadComments: true,
+    hasActionRequired: true
+  }
+];
+
+// Ticket Comments
+export const mockTicketComments: TicketComment[] = [
+  {
+    id: 'T-001-comment-1',
+    ticketId: 'T-001',
+    userId: '1',
+    userName: 'Juan Pérez',
+    userRole: 'CLIENT',
+    content: 'Adjunto captura de pantalla del error',
+    timestamp: '2025-01-05T10:35:00Z',
+    read: true,
+    commentType: 'NORMAL'
+  },
+  {
+    id: 'T-001-comment-2',
+    ticketId: 'T-001',
+    userId: 'admin1',
+    userName: 'Admin Jubbler',
+    userRole: 'SUPERADMIN',
+    content: 'Gracias por la información. Ya estoy revisando el error.',
+    timestamp: '2025-01-05T11:00:00Z',
+    read: true,
+    commentType: 'NORMAL'
+  },
+  {
+    id: 'T-001-comment-3',
+    ticketId: 'T-001',
+    userId: 'admin1',
+    userName: 'Admin Jubbler',
+    userRole: 'SUPERADMIN',
+    content: 'Identificamos el problema. Se trata de un error en la configuración del servidor de facturación. Lo resolveremos en las próximas 24 horas.',
+    timestamp: '2025-01-05T14:30:00Z',
+    read: true,
+    commentType: 'NORMAL'
+  },
+  {
+    id: 'T-001-comment-4',
+    ticketId: 'T-001',
+    userId: '1',
+    userName: 'Juan Pérez',
+    userRole: 'CLIENT',
+    content: 'Perfecto, quedo atento. ¿Necesitan algo más de mi parte?',
+    timestamp: '2025-01-06T09:00:00Z',
+    read: false,
+    commentType: 'NORMAL'
+  },
+  {
+    id: 'T-001-comment-5',
+    ticketId: 'T-001',
+    userId: 'admin1',
+    userName: 'Departamento de Soporte',
+    userRole: 'SUPERADMIN',
+    content: 'Necesitamos que nos envíes el número de factura exacto que estás intentando descargar y el navegador que estás utilizando para poder reproducir el error.',
+    timestamp: '2025-01-06T14:00:00Z',
+    read: true,
+    commentType: 'MASDACLI',
+    requiresResponse: true
+  },
+  {
+    id: 'T-002-comment-1',
+    ticketId: 'T-002',
+    userId: '1',
+    userName: 'Juan Pérez',
+    userRole: 'CLIENT',
+    content: 'Esta funcionalidad sería muy útil para nuestro equipo de análisis',
+    timestamp: '2024-12-20T14:15:00Z',
+    read: true,
+    commentType: 'NORMAL'
+  },
+  {
+    id: 'T-002-comment-2',
+    ticketId: 'T-002',
+    userId: 'admin1',
+    userName: 'Admin Jubbler',
+    userRole: 'SUPERADMIN',
+    content: 'Entendido. Ya lo tenemos en desarrollo. Estimamos que estará listo en 2 semanas.',
+    timestamp: '2024-12-21T10:00:00Z',
+    read: true,
+    commentType: 'NORMAL'
+  },
+  {
+    id: 'T-003-comment-1',
+    ticketId: 'T-003',
+    userId: 'admin1',
+    userName: 'Departamento de Desarrollo',
+    userRole: 'SUPERADMIN',
+    content: 'Para resolver este problema necesitamos que nos proporciones la versión exacta de Safari que estás utilizando y una captura de pantalla de la consola del navegador (presiona Cmd+Option+I en Mac).',
+    timestamp: '2024-12-28T12:00:00Z',
+    read: false,
+    commentType: 'MASDACLI',
+    requiresResponse: true
+  },
+  {
+    id: 'T-006-comment-1',
+    ticketId: 'T-006',
+    userId: '1',
+    userName: 'Juan Pérez',
+    userRole: 'CLIENT',
+    content: 'Cuando intento generar el reporte mensual de ventas, el sistema muestra el error "Cálculo de totales inconsistente".',
+    timestamp: '2025-01-10T09:15:00Z',
+    read: true,
+    commentType: 'NORMAL'
+  },
+  {
+    id: 'T-006-comment-2',
+    ticketId: 'T-006',
+    userId: 'admin1',
+    userName: 'Departamento de Soporte',
+    userRole: 'SUPERADMIN',
+    content: 'Gracias por reportar el problema. Lo estamos analizando y te mantendremos informado.',
+    timestamp: '2025-01-10T10:30:00Z',
+    read: true,
+    commentType: 'NORMAL'
+  },
+  {
+    id: 'T-006-comment-3',
+    ticketId: 'T-006',
+    userId: 'admin1',
+    userName: 'Departamento de Desarrollo',
+    userRole: 'SUPERADMIN',
+    content: 'Hemos identificado el problema y desarrollado una solución. Implementamos un nuevo algoritmo de cálculo que corrige el error de inconsistencia en los totales. Por favor, revisa el reporte y confirma que los cálculos ahora son correctos. Probamos con los datos de los últimos 6 meses y todos los reportes se generan correctamente.',
+    timestamp: '2025-01-15T16:00:00Z',
+    read: true,
+    commentType: 'COMUNICLI',
+    requiresApproval: true
   }
 ];
 

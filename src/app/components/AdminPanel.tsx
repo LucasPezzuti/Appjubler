@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { mockUsers, mockCompanies, mockChats, mockTickets, mockProjects } from '../mock-data';
-import { User, Chat, ChatMessage } from '../types';
+import { mockUsers, mockCompanies, mockChats, mockTickets, mockProjects, mockTicketComments, mockAdmins } from '../mock-data';
+import { User, Chat, ChatMessage, Ticket, TicketComment } from '../types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { DashboardView } from './admin/DashboardView';
+import { AdminTicketsView } from './admin/AdminTicketsView';
 import { 
   LogOut, 
   Users, 
@@ -25,7 +26,7 @@ import {
   Mic,
   Paperclip,
   ExternalLink,
-  Ticket,
+  Ticket as TicketIcon,
   FolderKanban,
   Search,
   LayoutDashboard,
@@ -35,7 +36,7 @@ import { toast } from 'sonner';
 
 export const AdminPanel: React.FC = () => {
   const { user: currentUser, logout } = useAuth();
-  const [activeView, setActiveView] = useState<'dashboard' | 'users' | 'companies' | 'chats'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'users' | 'companies' | 'chats' | 'tickets'>('dashboard');
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [chats, setChats] = useState<Chat[]>(mockChats);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
@@ -59,6 +60,12 @@ export const AdminPanel: React.FC = () => {
   }
 
   const pendingUsers = users.filter(u => u.status === 'PENDING');
+  
+  // Calcular tickets con comentarios sin leer (comentarios de cliente que admin no ha leído)
+  const ticketsWithUnreadComments = mockTickets.filter(ticket => {
+    const ticketComments = mockTicketComments.filter(c => c.ticketId === ticket.id);
+    return ticketComments.some(c => !c.read && c.userRole === 'CLIENT');
+  }).length;
 
   const handleApproveUser = (userId: string) => {
     setUsers(users.map(u => 
@@ -127,6 +134,23 @@ export const AdminPanel: React.FC = () => {
     setChats(chats.map(c => c.id === chatId ? updatedChat : c));
     setSelectedChat(updatedChat);
     toast.success('Chat activado y en atención');
+  };
+
+  const handleAssignChat = (adminId: string) => {
+    if (!selectedChat) return;
+
+    const admin = mockAdmins.find(a => a.id === adminId);
+    if (!admin) return;
+
+    const updatedChat = {
+      ...selectedChat,
+      assignedTo: adminId,
+      status: 'ACTIVE' as const
+    };
+
+    setChats(chats.map(c => c.id === selectedChat.id ? updatedChat : c));
+    setSelectedChat(updatedChat);
+    toast.success(`Chat asignado a ${admin.name}`);
   };
 
   const handleCreateNewChat = () => {
@@ -284,11 +308,30 @@ export const AdminPanel: React.FC = () => {
             <Building2 className="h-4 w-4 mr-2" />
             Clientes
           </Button>
+          <Button
+            variant={activeView === 'tickets' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => setActiveView('tickets')}
+            className={activeView === 'tickets' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-secondary'}
+          >
+            <TicketIcon className="h-4 w-4 mr-2" />
+            Tickets {ticketsWithUnreadComments > 0 && (
+              <Badge className="ml-2 bg-destructive text-white">{ticketsWithUnreadComments}</Badge>
+            )}
+          </Button>
         </div>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
+        {/* Tickets View */}
+        {activeView === 'tickets' && (() => {
+          // ... here will go the tickets view implementation
+          return (
+            <AdminTicketsView />
+          );
+        })()}
+        
         {/* Chat View */}
         {activeView === 'chats' && (() => {
           // Apply filters to chats
@@ -391,6 +434,13 @@ export const AdminPanel: React.FC = () => {
                             </div>
                             <p className="text-xs text-muted-foreground">{chat.companyName}</p>
                             <p className="text-xs text-muted-foreground truncate mt-1">{chat.lastMessage}</p>
+                            {chat.assignedTo && (
+                              <div className="mt-1 flex items-center gap-1">
+                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs px-2 py-0">
+                                  {mockAdmins.find(a => a.id === chat.assignedTo)?.name}
+                                </Badge>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </Card>
@@ -420,6 +470,38 @@ export const AdminPanel: React.FC = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Admin Assignment Selector */}
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm text-muted-foreground">Asignado a:</label>
+                        <Select 
+                          value={selectedChat.assignedTo || 'unassigned'} 
+                          onValueChange={(value) => {
+                            if (value !== 'unassigned') {
+                              handleAssignChat(value);
+                            }
+                          }}
+                          disabled={selectedChat.status === 'CLOSED'}
+                        >
+                          <SelectTrigger className="w-40 h-8 bg-background border-border text-foreground">
+                            <SelectValue placeholder="Sin asignar">
+                              {selectedChat.assignedTo 
+                                ? mockAdmins.find(a => a.id === selectedChat.assignedTo)?.name || 'Sin asignar'
+                                : 'Sin asignar'
+                              }
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent className="bg-card border-border">
+                            <SelectItem value="unassigned" className="text-muted-foreground" disabled>
+                              Sin asignar
+                            </SelectItem>
+                            {mockAdmins.map(admin => (
+                              <SelectItem key={admin.id} value={admin.id} className="text-foreground">
+                                {admin.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                       <Badge 
                         variant="outline"
                         className={
@@ -758,7 +840,7 @@ export const AdminPanel: React.FC = () => {
                               setDetailsView('tickets');
                             }}
                           >
-                            <Ticket className="h-4 w-4 mr-2" />
+                            <TicketIcon className="h-4 w-4 mr-2" />
                             Ver Tickets
                           </Button>
                           <Button 

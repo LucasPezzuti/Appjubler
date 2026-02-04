@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { mockTickets } from '../../mock-data';
+import { mockTickets, mockTicketComments } from '../../mock-data';
 import { Ticket, TicketStatus, TicketType } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -8,6 +8,7 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { GalaxyBackground } from '../GalaxyBackground';
+import { TicketDetailView } from './TicketDetailView';
 import {
   Dialog,
   DialogContent,
@@ -29,13 +30,31 @@ import { toast } from 'sonner';
 
 export const TicketsView: React.FC = () => {
   const { user } = useAuth();
-  const [tickets, setTickets] = useState<Ticket[]>(
-    mockTickets.filter(t => t.companyId === user?.companyId)
-  );
+  const [tickets, setTickets] = useState<Ticket[]>(() => {
+    // Adjuntar comentarios a los tickets
+    return mockTickets
+      .filter(t => t.companyId === user?.companyId)
+      .map(ticket => {
+        const comments = mockTicketComments.filter(c => c.ticketId === ticket.id);
+        const hasActionRequired = comments.some(c => 
+          (c.commentType === 'MASDACLI' && c.requiresResponse) ||
+          (c.commentType === 'COMUNICLI' && c.requiresApproval)
+        );
+        const hasUnreadComments = comments.some(c => !c.read && c.userRole === 'SUPERADMIN');
+        
+        return {
+          ...ticket,
+          comments,
+          hasUnreadComments,
+          hasActionRequired
+        };
+      });
+  });
   const [filterStatus, setFilterStatus] = useState<TicketStatus | 'ALL'>('ALL');
   const [filterUser, setFilterUser] = useState<string>('ALL');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   
   // New ticket form
   const [newTicket, setNewTicket] = useState({
@@ -82,11 +101,17 @@ export const TicketsView: React.FC = () => {
       description: newTicket.description,
       status: 'OPEN',
       priority: newTicket.priority as any,
+      urgency: newTicket.priority as any,
+      impact: 'MEDIUM',
+      origin: 'MOBILE',
       companyId: user.companyId,
+      companyName: user.name,
       createdBy: user.id,
       createdByName: user.name,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      comments: [],
+      hasUnreadComments: false
     };
 
     setTickets([ticket, ...tickets]);
@@ -134,6 +159,20 @@ export const TicketsView: React.FC = () => {
       ? 'bg-red-100 text-red-800' 
       : 'bg-purple-100 text-purple-800';
   };
+
+  // Si hay un ticket seleccionado, mostrar la vista de detalles
+  if (selectedTicket) {
+    return (
+      <TicketDetailView
+        ticket={selectedTicket}
+        onBack={() => setSelectedTicket(null)}
+        onUpdate={(updatedTicket) => {
+          setTickets(tickets.map(t => t.id === updatedTicket.id ? updatedTicket : t));
+          setSelectedTicket(updatedTicket);
+        }}
+      />
+    );
+  }
 
   return (
     <div className="h-full flex flex-col bg-background relative">
@@ -292,11 +331,15 @@ export const TicketsView: React.FC = () => {
             </div>
           ) : (
             filteredTickets.map(ticket => (
-              <Card key={ticket.id} className="hover:shadow-md transition-shadow bg-card border-border">
+              <Card 
+                key={ticket.id} 
+                className="hover:shadow-md transition-shadow bg-card border-border cursor-pointer"
+                onClick={() => setSelectedTicket(ticket)}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <Badge variant="outline" className={
                           ticket.type === 'INCIDENT' 
                             ? 'bg-chart-6/20 text-chart-6 border-chart-6/30'
@@ -312,6 +355,11 @@ export const TicketsView: React.FC = () => {
                         }>
                           {ticket.priority}
                         </Badge>
+                        {ticket.hasActionRequired && (
+                          <Badge className="bg-[#f28737] text-white border-[#f28737] hover:bg-[#f28737]/90 animate-pulse">
+                            ACCIÓN REQUERIDA
+                          </Badge>
+                        )}
                       </div>
                       <CardTitle className="text-base text-foreground">{ticket.title}</CardTitle>
                     </div>
